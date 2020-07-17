@@ -1,3 +1,0 @@
-# To run the notebook
-ipykernel.txt==5.3.0
-pandas==1.0.5
