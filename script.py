@@ -1,9 +1,12 @@
-from collections import Counter, defaultdict
 import re
+import sys
+
+from collections import Counter, defaultdict
 from copy import deepcopy
 
 # Used for debugging
 # from utils import console_print_of
+import special_characters as sc
 
 
 """
@@ -11,7 +14,7 @@ Data Modification
 """
 
 
-def remove_chairs(apartment_init, except_chair):
+def remove_chairs(apartment_init, list_pos_chairs, except_chair):
     apartment = deepcopy(apartment_init)
     for pair in list_pos_chairs:
         if pair != except_chair:
@@ -20,7 +23,7 @@ def remove_chairs(apartment_init, except_chair):
     return apartment
 
 
-def change_pos(i, j, new_i, new_j):
+def change_pos(apartment, i, j, new_i, new_j):
     apartment[i][j], apartment[new_i][new_j] = apartment[new_i][new_j], apartment[i][j]
     i, j = new_i, new_j
     return i, j
@@ -31,23 +34,23 @@ Vertical check
 """
 
 
-def is_room_on_same_column(i, j):
+def is_room_on_same_column(apartment, i, j):
     chair = apartment[i][j]
     col = [apartment[k][j] for k in range(len(apartment))]
     col_no_space = list(filter(lambda e: e != ' ', col))
-    return col_no_space[col_no_space.index(chair)+1] not in sep_chars or col_no_space[col_no_space.index(chair)-1] not in sep_chars
+    return col_no_space[col_no_space.index(chair)+1] not in sc.sep_chars or col_no_space[col_no_space.index(chair)-1] not in sc.sep_chars
 
 
-def find_room_on_same_column(i, j):
+def find_room_on_same_column(apartment, i, j):
     col = [apartment[k][j] for k in range(len(apartment))]
     i_up, i_down = i-1, i+1
     # Find a character of the room
-    while (col[i_up] in no_room_chars) and (col[i_down] in no_room_chars):
-        if col[i_up] not in sep_chars:
+    while (col[i_up] in sc.no_room_chars) and (col[i_down] in sc.no_room_chars):
+        if col[i_up] not in sc.sep_chars:
             i_up -= 1
-        if col[i_down] not in sep_chars:
+        if col[i_down] not in sc.sep_chars:
             i_down += 1
-    i_room = i_up if col[i_up] not in no_room_chars else i_down
+    i_room = i_up if col[i_up] not in sc.no_room_chars else i_down
 
     # Build the string of the room name
     row_str = ''.join(apartment[i_room])
@@ -74,19 +77,19 @@ Horizontal check
 """
 
 
-def is_room_on_same_row(i, j):
+def is_room_on_same_row(apartment, i, j):
     chair = apartment[i][j]
     row_no_space = list(filter(lambda e: e != ' ', apartment[i]))
     return row_no_space[row_no_space.index(chair)+1] == '(' or row_no_space[row_no_space.index(chair)-1] == ')'
 
 
-def find_room_on_same_row(i, j):
+def find_room_on_same_row(apartment, i, j):
     row = apartment[i]
     j_left, j_right = j-1, j+1
     while row[j_left] != ')' and row[j_right] != '(':
-        if row[j_left] not in sep_chars:
+        if row[j_left] not in sc.sep_chars:
             j_left -= 1
-        if row[j_right] not in sep_chars:
+        if row[j_right] not in sc.sep_chars:
             j_right += 1
     side = 'right' if row[j_right] == '(' else 'left'
     if side == 'right':
@@ -127,12 +130,12 @@ def update_stack_checkpoints(stack_checkpoints, new_open_corners, direction_when
                 stack_checkpoints.append({'coord': (i, j+1), 'exp_type': 'h'})
 
 
-def explore_horizontal_moves(i_start: int, j_start: int, stack_checkpoints: list):
+def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list):
     i, j = i_start, j_start
 
     # First step: one vertical check at the starting point
-    if is_room_on_same_column(i, j):
-        return find_room_on_same_column(i, j), (i, j)
+    if is_room_on_same_column(apartment, i, j):
+        return find_room_on_same_column(apartment, i, j), (i, j)
 
     # Second step: Move horizontally
 
@@ -140,7 +143,8 @@ def explore_horizontal_moves(i_start: int, j_start: int, stack_checkpoints: list
     direction = 'up'
 
     while True:
-        open_corners = find_open_corner_horizontal_check(i, j, direction)
+        open_corners = find_open_corner_horizontal_check(
+            apartment, i, j, direction)
 
         if open_corners != [None, None]:
             update_stack_checkpoints(stack_checkpoints=stack_checkpoints,
@@ -148,51 +152,52 @@ def explore_horizontal_moves(i_start: int, j_start: int, stack_checkpoints: list
                                      direction_when_found=direction)
 
         # If the room name is not found in the row, we move vertically
-        if not is_room_on_same_row(i=i, j=j):
+        if not is_room_on_same_row(apartment, i=i, j=j):
             # If we reached the top of the room ...
-            if direction == 'up' and apartment[i-1][j] in sep_chars:
+            if direction == 'up' and apartment[i-1][j] in sc.sep_chars:
                 # ...we set the direction to down for the next step...
                 direction = 'down'
                 # ...and get back to the initial position
-                i, j = change_pos(i=i, j=j,
+                i, j = change_pos(apartment, i=i, j=j,
                                   new_i=i_start, new_j=j)
 
             # If we reached the bottom of the room ...
-            if direction == 'down' and apartment[i+1][j] in sep_chars:
+            if direction == 'down' and apartment[i+1][j] in sc.sep_chars:
                 # The research has been unsuccessful
                 return 'not found', (i, j)
 
             # We move up
             if direction == 'up':
-                i, j = change_pos(i=i,
+                i, j = change_pos(apartment, i=i,
                                   j=j, new_i=i-1, new_j=j)
 
             # We move down
             elif direction == 'down':
-                i, j = change_pos(i=i,
+                i, j = change_pos(apartment, i=i,
                                   j=j, new_i=i+1, new_j=j)
 
         # We found the room name
         else:
             coord = (i, j)
-            return find_room_on_same_row(i, j), (i, j)
+            return find_room_on_same_row(apartment, i, j), (i, j)
 
 
-def explore_vertical_moves(i_start: int, j_start: int,  stack_checkpoints: list):
+def explore_vertical_moves(apartment, i_start: int, j_start: int,  stack_checkpoints: list):
     """TODO To complete
     """
     i, j = i_start, j_start
 
     # First step: one horizontal check at the starting point
-    if is_room_on_same_row(i=i, j=j):
-        return find_room_on_same_row(i, j), (i, j)
+    if is_room_on_same_row(apartment, i=i, j=j):
+        return find_room_on_same_row(apartment, i, j), (i, j)
 
     # Second step: Move horizontally
 
     # Initialize moving up
     direction = 'left'
     while True:
-        open_corners = find_open_corner_vertical_check(i, j, direction)
+        open_corners = find_open_corner_vertical_check(
+            apartment, i, j, direction)
 
         if open_corners != [None, None]:
             update_stack_checkpoints(stack_checkpoints=stack_checkpoints,
@@ -200,43 +205,43 @@ def explore_vertical_moves(i_start: int, j_start: int,  stack_checkpoints: list)
                                      direction_when_found=direction)
 
         # If the room name is not found in the column, we move horizontally
-        if not is_room_on_same_column(i, j):
+        if not is_room_on_same_column(apartment, i, j):
 
             # If we reached the left side of the room ...
-            if direction == 'left' and apartment[i][j-1] in sep_chars:
+            if direction == 'left' and apartment[i][j-1] in sc.sep_chars:
                 # ...we set the direction to down for the next step...
                 direction = 'right'
                 # ...and get back to the initial position
-                i, j = change_pos(i=i, j=j,
+                i, j = change_pos(apartment, i=i, j=j,
                                   new_i=i, new_j=j_start)
 
             # If we reached the right side of the room ...
-            if direction == 'right' and apartment[i][j+1] in sep_chars:
+            if direction == 'right' and apartment[i][j+1] in sc.sep_chars:
                 # The research has been unsuccessful
                 return 'not found', (i, j)
 
             # We move left
             if direction == 'left':
-                i, j = change_pos(i=i,
+                i, j = change_pos(apartment, i=i,
                                   j=j, new_i=i, new_j=j-1)
 
             # We move right
             elif direction == 'right':
-                i, j = change_pos(i=i,
+                i, j = change_pos(apartment, i=i,
                                   j=j, new_i=i, new_j=j+1)
 
         # We found the room name
         else:
-            return find_room_on_same_column(i, j), (i, j)
+            return find_room_on_same_column(apartment, i, j), (i, j)
 
 
-def find_open_corner_horizontal_check(i, j, direction):
+def find_open_corner_horizontal_check(apartment, i, j, direction):
     row = apartment[i]
     j_left, j_right = j-1, j+1
-    while not ((row[j_left] in sep_chars) and (row[j_right] in sep_chars)):
-        if row[j_left] not in sep_chars:
+    while not ((row[j_left] in sc.sep_chars) and (row[j_right] in sc.sep_chars)):
+        if row[j_left] not in sc.sep_chars:
             j_left -= 1
-        if row[j_right] not in sep_chars:
+        if row[j_right] not in sc.sep_chars:
             j_right += 1
     # Possible open corner left and right
     open_corners = [None, None]
@@ -254,13 +259,13 @@ def find_open_corner_horizontal_check(i, j, direction):
     return open_corners
 
 
-def find_open_corner_vertical_check(i, j, direction):
+def find_open_corner_vertical_check(apartment, i, j, direction):
     col = [apartment[k][j] for k in range(len(apartment))]
     i_up, i_down = i-1, i+1
-    while not((col[i_up] in sep_chars) and (col[i_down] in sep_chars)):
-        if col[i_up] not in sep_chars:
+    while not((col[i_up] in sc.sep_chars) and (col[i_down] in sc.sep_chars)):
+        if col[i_up] not in sc.sep_chars:
             i_up -= 1
-        if col[i_down] not in sep_chars:
+        if col[i_down] not in sc.sep_chars:
             i_down += 1
     # Possible open corners up and down
     open_corners = [None, None]
@@ -277,14 +282,14 @@ def find_open_corner_vertical_check(i, j, direction):
     return open_corners
 
 
-def explore(exp_type, i, j, stack_checkpoints):
+def explore(apartment, exp_type, i, j, stack_checkpoints):
     if exp_type == 'h':
-        return explore_horizontal_moves(i, j, stack_checkpoints)
+        return explore_horizontal_moves(apartment, i, j, stack_checkpoints)
     elif exp_type == 'v':
-        return explore_vertical_moves(i, j, stack_checkpoints)
+        return explore_vertical_moves(apartment, i, j, stack_checkpoints)
 
 
-def search_room(coord):
+def search_room(apartment, coord):
     room_of_chair = 'not found'
     stack_checkpoints = [
         {'coord': coord, 'exp_type': 'h'},
@@ -300,9 +305,10 @@ def search_room(coord):
         checkpoint = stack_checkpoints.pop()
         exp_type = checkpoint['exp_type']
         new_i, new_j = checkpoint['coord']
-        i, j = change_pos(i=i,
+        i, j = change_pos(apartment, i=i,
                           j=j, new_i=new_i, new_j=new_j)
-        room_of_chair, (i, j) = explore(exp_type, i, j, stack_checkpoints)
+        room_of_chair, (i, j) = explore(
+            apartment, exp_type, i, j, stack_checkpoints)
     return room_of_chair
 
 
@@ -311,22 +317,22 @@ Final Output generation
 """
 
 
-def group_dict_apartment_chairs(dict_apartment_chairs, chairs):
+def group_dict_apartment_chairs(dict_apartment_chairs):
 
     grouped_dict_apartment_chairs = {}
     for room_name in dict_apartment_chairs.keys():
         grouped_dict_apartment_chairs[room_name] = dict(
             Counter(dict_apartment_chairs[room_name]))
         # Add 0s for the chairs that a given room doesn't have
-        for chair in chairs:
+        for chair in sc.chairs:
             if chair not in grouped_dict_apartment_chairs[room_name].keys():
                 grouped_dict_apartment_chairs[room_name][chair] = 0
 
     return grouped_dict_apartment_chairs
 
 
-def make_total_dict_result(grouped_dict_apartment_chairs, chairs):
-    dict_total_chairs = {chair: 0 for chair in chairs}
+def make_total_dict_result(grouped_dict_apartment_chairs):
+    dict_total_chairs = {chair: 0 for chair in sc.chairs}
     for room_name in grouped_dict_apartment_chairs.keys():
         room_chairs = grouped_dict_apartment_chairs[room_name]
         for chair in room_chairs.keys():
@@ -334,9 +340,9 @@ def make_total_dict_result(grouped_dict_apartment_chairs, chairs):
     return dict(dict_total_chairs)
 
 
-def check_total_chairs(dict_total_chairs, apartment_string, chairs):
+def check_total_chairs(dict_total_chairs, apartment_string):
     total_chairs_from_input = {chair: Counter(apartment_string)[chair]
-                               for chair in Counter(apartment_string) if chair in chairs}
+                               for chair in Counter(apartment_string) if chair in sc.chairs}
     return dict_total_chairs == total_chairs_from_input
 
 
@@ -365,31 +371,19 @@ def print_output_console(grouped_dict_final_output):
         print_element_console(grouped_dict_final_output, element=room_name)
 
 
-if __name__ == "__main__":
+def run_solution(file_path):
     # rooms.txt (i.e the apartment)
     with open('rooms.txt', 'r') as f:
         apartment_string = f.read()
     apartment_init = [list([j for j in i.split('\n')][0])
                       for i in apartment_string.splitlines()]
-
     # Future useful objects
-
-    # Names of the chairs
-    # We save it as a list because we would like to print out the final result in this order of chairs
-    # as in the task_en.txt
-    chairs = ['W', 'P', 'S', 'C']
-    # Characters that delimit the apartment
-    sep_chars = {'\\', '|', '/', '+', '-'}
-
-    # Characters that are not in a room name: '(', ')' or and small letter
-    # The chair letters aside (because removed at each iteration), this is what we have left
-    no_room_chars = {'\\', '|', '/', '+', '-', ' '}
 
     # Dictionary: keys: a chair position, values: its name
     dict_pos_chairs = {}
     for i, row in enumerate(apartment_init):
         for j, element in enumerate(row):
-            if element in chairs:
+            if element in sc.chairs:
                 dict_pos_chairs[(i, j)] = element
 
     # List of postitions of chairs ordered vertically and horizontally
@@ -400,17 +394,23 @@ if __name__ == "__main__":
     for k, coord in enumerate(list_pos_chairs):
         i, j = coord
         chair = apartment_init[i][j]
-        apartment = remove_chairs(apartment_init, except_chair=coord)
-        room_of_chair = search_room(coord)
+        apartment = remove_chairs(
+            apartment_init, list_pos_chairs, except_chair=coord)
+        room_of_chair = search_room(apartment, coord)
         # Save it
         dict_apartment_chairs[room_of_chair].append(chair)
 
     grouped_dict_apartment_chairs = group_dict_apartment_chairs(
-        dict_apartment_chairs, chairs)
+        dict_apartment_chairs)
     dict_total_chairs = make_total_dict_result(
-        grouped_dict_apartment_chairs, chairs)
+        grouped_dict_apartment_chairs)
 
     grouped_dict_final_output = grouped_dict_apartment_chairs
     grouped_dict_final_output['total'] = dict_total_chairs
 
     print_output_console(grouped_dict_final_output)
+
+
+if __name__ == "__main__":
+    file_path = sys.argv[1]
+    run_solution(file_path=file_path)
