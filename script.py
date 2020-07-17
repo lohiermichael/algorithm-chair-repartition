@@ -3,25 +3,6 @@ import re
 from copy import deepcopy
 from utils import print_of
 
-chairs = {'W', 'P', 'S', 'C'}
-sep_chars = {'\\', '|', '/', '+', '-'}
-no_room_chars = {'\\', '|', '/', '+', '-', ' '}
-
-with open('rooms.txt', 'r') as f:
-    rooms_string = f.read()
-
-rooms_init = [list([j for j in i.split('\n')][0])
-              for i in rooms_string.splitlines()]
-
-dict_pos_chairs = {}
-for i, row in enumerate(rooms_init):
-    for j, element in enumerate(row):
-        if element in chairs:
-            dict_pos_chairs[(i, j)] = element
-
-list_pos_chairs = list(dict_pos_chairs.keys())
-list_pos_chairs.sort(key=lambda x: (x[0], x[1]))
-
 
 """
 Data Modification
@@ -308,7 +289,6 @@ def search_room(rooms, coord):
     count = 0
     i, j = coord
     while room_of_chair == 'not found' and count < 10:
-        print(stack_checkpoints)
         count += 1
         if not stack_checkpoints:
             exp_type = 'h' if exp_type == 'v' else 'v'
@@ -321,14 +301,107 @@ def search_room(rooms, coord):
     return room_of_chair
 
 
-# print_of(rooms_init)
-dict_rooms_chairs = defaultdict(list)
-for k, coord in enumerate(list_pos_chairs):
-    if k + 1 == 6:
+def group_dict_rooms_chairs(dict_rooms_chairs, chairs):
+
+    grouped_dict_rooms_chairs = {}
+    for room_name in dict_rooms_chairs.keys():
+        grouped_dict_rooms_chairs[room_name] = dict(
+            Counter(dict_rooms_chairs[room_name]))
+        # Add 0s for the chairs that a given room doesn't have
+        for chair in chairs:
+            if chair not in grouped_dict_rooms_chairs[room_name].keys():
+                grouped_dict_rooms_chairs[room_name][chair] = 0
+
+    return grouped_dict_rooms_chairs
+
+
+def make_total_dict_result(grouped_dict_rooms_chairs, chairs):
+    dict_total_chairs = {chair: 0 for chair in chairs}
+    for room_name in grouped_dict_rooms_chairs.keys():
+        room_chairs = grouped_dict_rooms_chairs[room_name]
+        for chair in room_chairs.keys():
+            dict_total_chairs[chair] += room_chairs[chair]
+    return dict(dict_total_chairs)
+
+
+def check_total_chairs(dict_total_chairs, rooms_string, chairs):
+    total_chairs_from_input = {chair: Counter(rooms_string)[chair]
+                               for chair in Counter(rooms_string) if chair in chairs}
+    return dict_total_chairs == total_chairs_from_input
+
+
+def print_element_console(grouped_dict_final_output, element):
+    dict_chairs_of_element = grouped_dict_final_output[element]
+    # To match the example given in the task_en.txt
+    ordered_chairs_output = ['W', 'P', 'S', 'C']
+    print(f'{element}:')
+    str_line = ''
+    for chair in ordered_chairs_output:
+        str_line += f'{chair}: {dict_chairs_of_element[chair]}, '
+    # Do not print the final ',' and ' '
+    print(str_line[:-2])
+
+
+def print_output_console(grouped_dict_final_output):
+    grouped_dict_final_output = grouped_dict_final_output.copy()
+
+    # We first print the total result
+    print_element_console(grouped_dict_final_output, element='total')
+    del grouped_dict_final_output['total']
+
+    # We then loop over the rooms names in the alphabetical order
+
+    for room_name in sorted(grouped_dict_final_output.keys()):
+        print_element_console(grouped_dict_final_output, element=room_name)
+
+
+if __name__ == "__main__":
+    # Rooms (i.e the apartment)
+    with open('rooms.txt', 'r') as f:
+        rooms_string = f.read()
+    rooms_init = [list([j for j in i.split('\n')][0])
+                  for i in rooms_string.splitlines()]
+
+    # Future useful objects
+
+    # Names of the chairs
+    # We save it as a list because we would like to print out the final result in this order of chairs
+    # as in the task_en.txt
+    chairs = ['W', 'P', 'S', 'C']
+    # Characters that delimit the rooms
+    sep_chars = {'\\', '|', '/', '+', '-'}
+
+    # Characters that are not in a room name: '(', ')' or and small letter
+    # The chair letters aside (because removed at each iteration), this is what we have left
+    no_room_chars = {'\\', '|', '/', '+', '-', ' '}
+
+    # Dictionary: keys: a chair position, values: its name
+    dict_pos_chairs = {}
+    for i, row in enumerate(rooms_init):
+        for j, element in enumerate(row):
+            if element in chairs:
+                dict_pos_chairs[(i, j)] = element
+
+    # List of postitions of chairs ordered vertically and horizontally
+    list_pos_chairs = list(dict_pos_chairs.keys())
+    list_pos_chairs.sort(key=lambda x: (x[0], x[1]))
+
+    # print_of(rooms_init)
+    dict_rooms_chairs = defaultdict(list)
+    for k, coord in enumerate(list_pos_chairs):
         i, j = coord
         chair = rooms_init[i][j]
         rooms = remove_chairs(rooms_init, except_chair=coord)
         room_of_chair = search_room(rooms, coord)
         # Save it
         dict_rooms_chairs[room_of_chair].append(chair)
-print(dict_rooms_chairs)
+
+    grouped_dict_rooms_chairs = group_dict_rooms_chairs(
+        dict_rooms_chairs, chairs)
+    dict_total_chairs = make_total_dict_result(
+        grouped_dict_rooms_chairs, chairs)
+
+    grouped_dict_final_output = grouped_dict_rooms_chairs
+    grouped_dict_final_output['total'] = dict_total_chairs
+
+    print_output_console(grouped_dict_final_output)
