@@ -128,22 +128,27 @@ Move strategies
 """
 
 
-def update_queue_checkpoints(queue_checkpoints, new_open_corners, direction_when_found):
+def update_stack_checkpoints(stack_checkpoints, new_open_corners, direction_when_found):
     for open_corner in new_open_corners:
         if open_corner:  # Not None
             i, j = open_corner
             if direction_when_found == 'down':
-                queue_checkpoints.append({'coord': (i+1, j), 'exp_type': 'v'})
+                stack_checkpoints.append({'coord': (i+1, j), 'exp_type': 'h'})
+                stack_checkpoints.append({'coord': (i+1, j), 'exp_type': 'v'})
             elif direction_when_found == 'up':
-                queue_checkpoints.append({'coord': (i-1, j), 'exp_type': 'v'})
+                stack_checkpoints.append({'coord': (i-1, j), 'exp_type': 'h'})
+                stack_checkpoints.append({'coord': (i-1, j), 'exp_type': 'v'})
             if direction_when_found == 'left':
-                queue_checkpoints.append({'coord': (i, j-1), 'exp_type': 'h'})
+                stack_checkpoints.append({'coord': (i, j-1), 'exp_type': 'v'})
+                stack_checkpoints.append({'coord': (i, j-1), 'exp_type': 'h'})
             if direction_when_found == 'right':
-                queue_checkpoints.append({'coord': (i, j+1), 'exp_type': 'h'})
+                stack_checkpoints.append({'coord': (i, j+1), 'exp_type': 'v'})
+                stack_checkpoints.append({'coord': (i, j+1), 'exp_type': 'h'})
 
 
-def explore_horizontal_moves(i_start: int, j_start: int, queue_checkpoints: list):
+def explore_horizontal_moves(i_start: int, j_start: int, stack_checkpoints: list):
     i, j = i_start, j_start
+
     # First step: one vertical check at the starting point
     if is_in_room_same_column(i, j):
         return find_room_on_same_column(rooms, i, j), (i, j)
@@ -155,6 +160,11 @@ def explore_horizontal_moves(i_start: int, j_start: int, queue_checkpoints: list
 
     while True:
         open_corners = find_open_corner_horizontal_check(i, j, direction)
+
+        if open_corners != [None, None]:
+            update_stack_checkpoints(stack_checkpoints=stack_checkpoints,
+                                     new_open_corners=open_corners,
+                                     direction_when_found=direction)
 
         # If the room name is not found in the row, we move vertically
         if not is_in_room_same_row(rooms=rooms, i=i, j=j):
@@ -184,13 +194,8 @@ def explore_horizontal_moves(i_start: int, j_start: int, queue_checkpoints: list
             coord = (i, j)
             return find_room_on_same_row(rooms, i, j), (i, j)
 
-        if open_corners != [None, None]:
-            update_queue_checkpoints(queue_checkpoints=queue_checkpoints,
-                                     new_open_corners=open_corners,
-                                     direction_when_found=direction)
 
-
-def explore_vertical_moves(i_start: int, j_start: int,  queue_checkpoints: list):
+def explore_vertical_moves(i_start: int, j_start: int,  stack_checkpoints: list):
     """TODO To complete
     """
     i, j = i_start, j_start
@@ -205,6 +210,11 @@ def explore_vertical_moves(i_start: int, j_start: int,  queue_checkpoints: list)
     direction = 'left'
     while True:
         open_corners = find_open_corner_vertical_check(i, j, direction)
+
+        if open_corners != [None, None]:
+            update_stack_checkpoints(stack_checkpoints=stack_checkpoints,
+                                     new_open_corners=open_corners,
+                                     direction_when_found=direction)
 
         # If the room name is not found in the column, we move horizontally
         if not is_in_room_same_column(i, j):
@@ -233,11 +243,6 @@ def explore_vertical_moves(i_start: int, j_start: int,  queue_checkpoints: list)
         # We found the room name
         else:
             return find_room_on_same_column(rooms, i, j), (i, j)
-
-        if open_corners != [None, None]:
-            update_queue_checkpoints(queue_checkpoints=queue_checkpoints,
-                                     new_open_corners=open_corners,
-                                     direction_when_found=direction)
 
 
 def find_open_corner_horizontal_check(i, j, direction):
@@ -287,38 +292,43 @@ def find_open_corner_vertical_check(i, j, direction):
     return open_corners
 
 
-def explore(exp_type, i, j, queue_checkpoints):
+def explore(exp_type, i, j, stack_checkpoints):
     if exp_type == 'h':
-        return explore_horizontal_moves(i, j, queue_checkpoints)
+        return explore_horizontal_moves(i, j, stack_checkpoints)
     elif exp_type == 'v':
-        return explore_vertical_moves(i, j, queue_checkpoints)
+        return explore_vertical_moves(i, j, stack_checkpoints)
 
 
 def search_room(rooms, coord):
     room_of_chair = 'not found'
-    queue_checkpoints = [{'coord': coord, 'exp_type': 'v'}]
+    stack_checkpoints = [
+        {'coord': coord, 'exp_type': 'h'},
+        {'coord': coord, 'exp_type': 'v'}
+    ]
     count = 0
     i, j = coord
     while room_of_chair == 'not found' and count < 10:
+        print(stack_checkpoints)
         count += 1
-        if not queue_checkpoints:
+        if not stack_checkpoints:
             exp_type = 'h' if exp_type == 'v' else 'v'
-            queue_checkpoints.append({'coord': (i, j), 'exp_type': exp_type})
-        checkpoint = queue_checkpoints.pop()
+            stack_checkpoints.append({'coord': (i, j), 'exp_type': exp_type})
+        checkpoint = stack_checkpoints.pop()
         exp_type = checkpoint['exp_type']
         new_i, new_j = checkpoint['coord']
         i, j = change_pos(rooms=rooms, i=i, j=j, new_i=new_i, new_j=new_j)
-        room_of_chair, (i, j) = explore(exp_type, i, j, queue_checkpoints)
+        room_of_chair, (i, j) = explore(exp_type, i, j, stack_checkpoints)
     return room_of_chair
 
 
 # print_of(rooms_init)
 dict_rooms_chairs = defaultdict(list)
 for k, coord in enumerate(list_pos_chairs):
-    i, j = coord
-    chair = rooms_init[i][j]
-    rooms = remove_chairs(rooms_init, except_chair=coord)
-    room_of_chair = search_room(rooms, coord)
-    # Save it
-    dict_rooms_chairs[room_of_chair].append(chair)
+    if k + 1 == 6:
+        i, j = coord
+        chair = rooms_init[i][j]
+        rooms = remove_chairs(rooms_init, except_chair=coord)
+        room_of_chair = search_room(rooms, coord)
+        # Save it
+        dict_rooms_chairs[room_of_chair].append(chair)
 print(dict_rooms_chairs)
