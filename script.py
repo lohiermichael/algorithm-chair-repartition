@@ -306,6 +306,11 @@ def search_room(coord):
     return room_of_chair
 
 
+"""
+Final Output generation
+"""
+
+
 def group_dict_apartment_chairs(dict_apartment_chairs, chairs):
 
     grouped_dict_apartment_chairs = {}
