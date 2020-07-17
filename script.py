@@ -289,7 +289,7 @@ def explore(apartment, exp_type, i, j, stack_checkpoints):
         return explore_vertical_moves(apartment, i, j, stack_checkpoints)
 
 
-def search_room(apartment, coord):
+def search_room(apartment, coord, max_iterations=100):
     room_of_chair = 'not found'
     stack_checkpoints = [
         {'coord': coord, 'exp_type': 'h'},
@@ -297,11 +297,16 @@ def search_room(apartment, coord):
     ]
     count = 0
     i, j = coord
-    while room_of_chair == 'not found' and count < 10:
+    while room_of_chair == 'not found':
+
+        # Handle possible errors
         count += 1
+        if count > max_iterations:
+            raise MiscException('Too many iterations')
         if not stack_checkpoints:
-            exp_type = 'h' if exp_type == 'v' else 'v'
-            stack_checkpoints.append({'coord': (i, j), 'exp_type': exp_type})
+            raise Error(
+                'The stack_checkpoints variable is empty and the room name is unfounded')
+
         checkpoint = stack_checkpoints.pop()
         exp_type = checkpoint['exp_type']
         new_i, new_j = checkpoint['coord']
@@ -348,11 +353,10 @@ def check_total_chairs(dict_total_chairs, apartment_string):
 
 def print_element_console(grouped_dict_final_output, element):
     dict_chairs_of_element = grouped_dict_final_output[element]
-    # To match the example given in the task_en.txt
-    ordered_chairs_output = ['W', 'P', 'S', 'C']
+
     print(f'{element}:')
     str_line = ''
-    for chair in ordered_chairs_output:
+    for chair in sc.chairs:
         str_line += f'{chair}: {dict_chairs_of_element[chair]}, '
     # Do not print the final ',' and ' '
     print(str_line[:-2])
