@@ -20,7 +20,7 @@ def remove_chairs(apartment_init, except_chair):
     return apartment
 
 
-def change_pos(apartment, i, j, new_i, new_j):
+def change_pos(i, j, new_i, new_j):
     apartment[i][j], apartment[new_i][new_j] = apartment[new_i][new_j], apartment[i][j]
     i, j = new_i, new_j
     return i, j
@@ -31,15 +31,14 @@ Vertical check
 """
 
 
-def is_in_room_same_column(i, j):
+def is_room_on_same_column(i, j):
     chair = apartment[i][j]
     col = [apartment[k][j] for k in range(len(apartment))]
     col_no_space = list(filter(lambda e: e != ' ', col))
     return col_no_space[col_no_space.index(chair)+1] not in sep_chars or col_no_space[col_no_space.index(chair)-1] not in sep_chars
 
 
-def find_room_on_same_column(apartment, i, j):
-    chair = apartment[i][j]
+def find_room_on_same_column(i, j):
     col = [apartment[k][j] for k in range(len(apartment))]
     i_up, i_down = i-1, i+1
     # Find a character of the room
@@ -75,14 +74,13 @@ Horizontal check
 """
 
 
-def is_in_room_same_row(apartment, i, j):
+def is_room_on_same_row(i, j):
     chair = apartment[i][j]
     row_no_space = list(filter(lambda e: e != ' ', apartment[i]))
     return row_no_space[row_no_space.index(chair)+1] == '(' or row_no_space[row_no_space.index(chair)-1] == ')'
 
 
-def find_room_on_same_row(apartment, i, j):
-    chair = apartment[i][j]
+def find_room_on_same_row(i, j):
     row = apartment[i]
     j_left, j_right = j-1, j+1
     while row[j_left] != ')' and row[j_right] != '(':
@@ -133,8 +131,8 @@ def explore_horizontal_moves(i_start: int, j_start: int, stack_checkpoints: list
     i, j = i_start, j_start
 
     # First step: one vertical check at the starting point
-    if is_in_room_same_column(i, j):
-        return find_room_on_same_column(apartment, i, j), (i, j)
+    if is_room_on_same_column(i, j):
+        return find_room_on_same_column(i, j), (i, j)
 
     # Second step: Move horizontally
 
@@ -150,13 +148,13 @@ def explore_horizontal_moves(i_start: int, j_start: int, stack_checkpoints: list
                                      direction_when_found=direction)
 
         # If the room name is not found in the row, we move vertically
-        if not is_in_room_same_row(apartment=apartment, i=i, j=j):
+        if not is_room_on_same_row(i=i, j=j):
             # If we reached the top of the room ...
             if direction == 'up' and apartment[i-1][j] in sep_chars:
                 # ...we set the direction to down for the next step...
                 direction = 'down'
                 # ...and get back to the initial position
-                i, j = change_pos(apartment=apartment, i=i, j=j,
+                i, j = change_pos(i=i, j=j,
                                   new_i=i_start, new_j=j)
 
             # If we reached the bottom of the room ...
@@ -166,18 +164,18 @@ def explore_horizontal_moves(i_start: int, j_start: int, stack_checkpoints: list
 
             # We move up
             if direction == 'up':
-                i, j = change_pos(apartment=apartment, i=i,
+                i, j = change_pos(i=i,
                                   j=j, new_i=i-1, new_j=j)
 
             # We move down
             elif direction == 'down':
-                i, j = change_pos(apartment=apartment, i=i,
+                i, j = change_pos(i=i,
                                   j=j, new_i=i+1, new_j=j)
 
         # We found the room name
         else:
             coord = (i, j)
-            return find_room_on_same_row(apartment, i, j), (i, j)
+            return find_room_on_same_row(i, j), (i, j)
 
 
 def explore_vertical_moves(i_start: int, j_start: int,  stack_checkpoints: list):
@@ -186,7 +184,7 @@ def explore_vertical_moves(i_start: int, j_start: int,  stack_checkpoints: list)
     i, j = i_start, j_start
 
     # First step: one horizontal check at the starting point
-    if is_in_room_same_row(apartment=apartment, i=i, j=j):
+    if is_room_on_same_row(i=i, j=j):
         return find_room_on_same_row(i, j), (i, j)
 
     # Second step: Move horizontally
@@ -202,14 +200,14 @@ def explore_vertical_moves(i_start: int, j_start: int,  stack_checkpoints: list)
                                      direction_when_found=direction)
 
         # If the room name is not found in the column, we move horizontally
-        if not is_in_room_same_column(i, j):
+        if not is_room_on_same_column(i, j):
 
             # If we reached the left side of the room ...
             if direction == 'left' and apartment[i][j-1] in sep_chars:
                 # ...we set the direction to down for the next step...
                 direction = 'right'
                 # ...and get back to the initial position
-                i, j = change_pos(apartment=apartment, i=i, j=j,
+                i, j = change_pos(i=i, j=j,
                                   new_i=i, new_j=j_start)
 
             # If we reached the right side of the room ...
@@ -219,17 +217,17 @@ def explore_vertical_moves(i_start: int, j_start: int,  stack_checkpoints: list)
 
             # We move left
             if direction == 'left':
-                i, j = change_pos(apartment=apartment, i=i,
+                i, j = change_pos(i=i,
                                   j=j, new_i=i, new_j=j-1)
 
             # We move right
             elif direction == 'right':
-                i, j = change_pos(apartment=apartment, i=i,
+                i, j = change_pos(i=i,
                                   j=j, new_i=i, new_j=j+1)
 
         # We found the room name
         else:
-            return find_room_on_same_column(apartment, i, j), (i, j)
+            return find_room_on_same_column(i, j), (i, j)
 
 
 def find_open_corner_horizontal_check(i, j, direction):
@@ -286,7 +284,7 @@ def explore(exp_type, i, j, stack_checkpoints):
         return explore_vertical_moves(i, j, stack_checkpoints)
 
 
-def search_room(apartment, coord):
+def search_room(coord):
     room_of_chair = 'not found'
     stack_checkpoints = [
         {'coord': coord, 'exp_type': 'h'},
@@ -302,7 +300,7 @@ def search_room(apartment, coord):
         checkpoint = stack_checkpoints.pop()
         exp_type = checkpoint['exp_type']
         new_i, new_j = checkpoint['coord']
-        i, j = change_pos(apartment=apartment, i=i,
+        i, j = change_pos(i=i,
                           j=j, new_i=new_i, new_j=new_j)
         room_of_chair, (i, j) = explore(exp_type, i, j, stack_checkpoints)
     return room_of_chair
@@ -398,7 +396,7 @@ if __name__ == "__main__":
         i, j = coord
         chair = apartment_init[i][j]
         apartment = remove_chairs(apartment_init, except_chair=coord)
-        room_of_chair = search_room(apartment, coord)
+        room_of_chair = search_room(coord)
         # Save it
         dict_apartment_chairs[room_of_chair].append(chair)
 
