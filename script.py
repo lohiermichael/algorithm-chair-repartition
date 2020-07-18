@@ -412,10 +412,15 @@ def run_solution(file_path):
     for k, coord in enumerate(list_pos_chairs):
         i, j = coord
         chair = apartment_init[i][j]
+
+        '''Step 3.1: Temporarily remove the other chairs in the apartment'''
         apartment = remove_chairs(
             apartment_init, list_pos_chairs, except_chair=coord)
+
+        '''Step 3.2: Search the room of a chair'''
         room_of_chair = search_room(apartment, coord)
-        # Save it
+
+        '''Step 3.3: Save the result'''
         dict_apartment_chairs[room_of_chair].append(chair)
 
     '''Step 4: Transform the result and display it'''
