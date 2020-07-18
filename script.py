@@ -130,9 +130,6 @@ def update_checkpoints(stack_checkpoints, found_checkpoints, new_open_corners, d
         if new_checkpoint not in found_checkpoints:
             stack_checkpoints.append(new_checkpoint)
             found_checkpoints.append(new_checkpoint)
-        else:
-            return True  # Break exploration = True
-    return False  # Break exploration = False
 
 
 def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list, found_checkpoints: list):
@@ -151,13 +148,11 @@ def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkp
         open_corners = find_open_corner_horizontal_check(
             apartment, i, j, direction)
 
-        break_search = update_checkpoints(stack_checkpoints=stack_checkpoints,
-                                          found_checkpoints=found_checkpoints,
-                                          new_open_corners=open_corners,
-                                          direction_when_found=direction,
-                                          )
-        if break_search:
-            return 'not found', (i, j)
+        update_checkpoints(stack_checkpoints=stack_checkpoints,
+                           found_checkpoints=found_checkpoints,
+                           new_open_corners=open_corners,
+                           direction_when_found=direction,
+                           )
 
         # If the room name is not found in the row, we move vertically
         if not is_room_on_same_row(apartment, i=i, j=j):
@@ -206,13 +201,11 @@ def explore_vertical_moves(apartment, i_start: int, j_start: int,  stack_checkpo
         open_corners = find_open_corner_vertical_check(
             apartment, i, j, direction)
 
-        break_search = update_checkpoints(stack_checkpoints=stack_checkpoints,
-                                          found_checkpoints=found_checkpoints,
-                                          new_open_corners=open_corners,
-                                          direction_when_found=direction,
-                                          )
-        if break_search:
-            return 'not found', (i, j)
+        update_checkpoints(stack_checkpoints=stack_checkpoints,
+                           found_checkpoints=found_checkpoints,
+                           new_open_corners=open_corners,
+                           direction_when_found=direction,
+                           )
 
         # If the room name is not found in the column, we move horizontally
         if not is_room_on_same_column(apartment, i, j):
@@ -246,6 +239,7 @@ def explore_vertical_moves(apartment, i_start: int, j_start: int,  stack_checkpo
 
 
 def find_open_corner_horizontal_check(apartment, i, j, direction):
+
     row = apartment[i]
     j_left, j_right = j-1, j+1
     while not ((row[j_left] in sc.sep_chars) and (row[j_right] in sc.sep_chars)):
@@ -359,6 +353,10 @@ def make_total_dict_result(grouped_dict_apartment_chairs):
 def check_total_chairs(dict_total_chairs, apartment_string):
     total_chairs_from_input = {chair: Counter(apartment_string)[chair]
                                for chair in Counter(apartment_string) if chair in sc.chairs}
+    # Add 0s for the chairs that a given room doesn't have
+    for chair in sc.chairs:
+        if chair not in total_chairs_from_input.keys():
+            total_chairs_from_input[chair] = 0
     return dict_total_chairs == total_chairs_from_input
 
 
@@ -415,10 +413,10 @@ def run_solution(file_path):
         # Save it
         dict_apartment_chairs[room_of_chair].append(chair)
 
-        grouped_dict_apartment_chairs = group_dict_apartment_chairs(
-            dict_apartment_chairs)
-        dict_total_chairs = make_total_dict_result(
-            grouped_dict_apartment_chairs)
+    grouped_dict_apartment_chairs = group_dict_apartment_chairs(
+        dict_apartment_chairs)
+    dict_total_chairs = make_total_dict_result(
+        grouped_dict_apartment_chairs)
 
     assert check_total_chairs(
         dict_total_chairs, apartment_string), "The total repartition incorrect"
@@ -430,6 +428,6 @@ def run_solution(file_path):
 
 
 if __name__ == "__main__":
-    given_path = './rooms_tests/test_rooms_2.txt'
+    given_path = './test_rooms/test_rooms_3.txt'
     file_path = sys.argv[1] if len(sys.argv) > 1 else given_path
     run_solution(file_path=file_path)
