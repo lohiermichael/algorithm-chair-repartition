@@ -255,14 +255,16 @@ def find_open_corner_horizontal_check(apartment, i, j, direction):
             j_right += 1
     # Possible open corner left and right
     open_corners = []
-    if row[j_left] == '+' and apartment[i+1][j_left] == ' ' and apartment[i][j_left-1] == '-':
-        open_corners.append((i, j_left))
-    if row[j_right] == '+' and apartment[i+1][j_right] == ' ' and apartment[i][j_right+1] == '-':
-        open_corners.append((i, j_right))
-    if row[j_left] == '+' and apartment[i-1][j_left] == ' ' and apartment[i][j_left-1] == '-':
-        open_corners.append((i, j_left))
-    if row[j_right] == '+' and apartment[i-1][j_right] == ' ' and apartment[i][j_right+1] == '-':
-        open_corners.append((i, j_right))
+    if direction == 'down':
+        if row[j_left] == '+' and apartment[i+1][j_left] == ' ' and apartment[i][j_left-1] == '-':
+            open_corners.append((i, j_left))
+        if row[j_right] == '+' and apartment[i+1][j_right] == ' ' and apartment[i][j_right+1] == '-':
+            open_corners.append((i, j_right))
+    elif direction == 'up':
+        if row[j_left] == '+' and apartment[i-1][j_left] == ' ' and apartment[i][j_left-1] == '-':
+            open_corners.append((i, j_left))
+        if row[j_right] == '+' and apartment[i-1][j_right] == ' ' and apartment[i][j_right+1] == '-':
+            open_corners.append((i, j_right))
     return open_corners
 
 
@@ -276,14 +278,16 @@ def find_open_corner_vertical_check(apartment, i, j, direction):
             i_down += 1
     # Possible open corners up and down
     open_corners = []
-    if col[i_up] == '+' and apartment[i_up][j-1] == ' ' and apartment[i_up-1][j] == '|':
-        open_corners.append((i_up, j))
-    if col[i_down] == '+' and apartment[i_down][j-1] == ' ' and apartment[i_down+1][j] == '|':
-        open_corners.append((i_down, j))
-    if col[i_up] == '+' and apartment[i_up][j+1] == ' ' and apartment[i_up-1][j] == '|':
-        open_corners.append((i_up, j))
-    if col[i_down] == '+' and apartment[i_down][j+1] == ' ' and apartment[i_down+1][j] == '|':
-        open_corners.append((i_down, j))
+    if direction == 'left':
+        if col[i_up] == '+' and apartment[i_up][j-1] == ' ' and apartment[i_up-1][j] == '|':
+            open_corners.append((i_up, j))
+        if col[i_down] == '+' and apartment[i_down][j-1] == ' ' and apartment[i_down+1][j] == '|':
+            open_corners.append((i_down, j))
+    elif direction == 'right':
+        if col[i_up] == '+' and apartment[i_up][j+1] == ' ' and apartment[i_up-1][j] == '|':
+            open_corners.append((i_up, j))
+        if col[i_down] == '+' and apartment[i_down][j+1] == ' ' and apartment[i_down+1][j] == '|':
+            open_corners.append((i_down, j))
     return open_corners
 
 
@@ -307,7 +311,6 @@ def search_room(apartment, coord, max_iterations=100):
     count = 0
     i, j = coord
     while room_of_chair == 'not found':
-
         # Handle possible errors
         count += 1
         if count > max_iterations:
@@ -404,7 +407,6 @@ def run_solution(file_path):
 
     dict_apartment_chairs = defaultdict(list)
     for k, coord in enumerate(list_pos_chairs):
-        # if k+1 == 6:
         i, j = coord
         chair = apartment_init[i][j]
         apartment = remove_chairs(
