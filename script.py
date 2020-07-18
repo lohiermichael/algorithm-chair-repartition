@@ -4,10 +4,8 @@ import sys
 from collections import Counter, defaultdict
 from copy import deepcopy
 
-# Used for debugging
-# from utils import console_print_of
+from utils import console_print_of  # Used for debugging
 import special_characters as sc
-
 
 """
 Data Modification
@@ -112,25 +110,32 @@ Move strategies
 """
 
 
-def update_stack_checkpoints(stack_checkpoints, new_open_corners, direction_when_found):
+def update_checkpoints(stack_checkpoints, found_checkpoints, new_open_corners, direction_when_found):
+    new_checkpoints = []
     for open_corner in new_open_corners:
-        if open_corner:  # Not None
-            i, j = open_corner
-            if direction_when_found == 'down':
-                stack_checkpoints.append({'coord': (i+1, j), 'exp_type': 'h'})
-                stack_checkpoints.append({'coord': (i+1, j), 'exp_type': 'v'})
-            elif direction_when_found == 'up':
-                stack_checkpoints.append({'coord': (i-1, j), 'exp_type': 'h'})
-                stack_checkpoints.append({'coord': (i-1, j), 'exp_type': 'v'})
-            if direction_when_found == 'left':
-                stack_checkpoints.append({'coord': (i, j-1), 'exp_type': 'v'})
-                stack_checkpoints.append({'coord': (i, j-1), 'exp_type': 'h'})
-            if direction_when_found == 'right':
-                stack_checkpoints.append({'coord': (i, j+1), 'exp_type': 'v'})
-                stack_checkpoints.append({'coord': (i, j+1), 'exp_type': 'h'})
+        i, j = open_corner
+        if direction_when_found == 'down':
+            new_checkpoints.append({'coord': (i+1, j), 'exp_type': 'h'})
+            new_checkpoints.append({'coord': (i+1, j), 'exp_type': 'v'})
+        elif direction_when_found == 'up':
+            new_checkpoints.append({'coord': (i-1, j), 'exp_type': 'h'})
+            new_checkpoints.append({'coord': (i-1, j), 'exp_type': 'v'})
+        elif direction_when_found == 'left':
+            new_checkpoints.append({'coord': (i, j-1), 'exp_type': 'v'})
+            new_checkpoints.append({'coord': (i, j-1), 'exp_type': 'h'})
+        elif direction_when_found == 'right':
+            new_checkpoints.append({'coord': (i, j+1), 'exp_type': 'v'})
+            new_checkpoints.append({'coord': (i, j+1), 'exp_type': 'h'})
+    for new_checkpoint in new_checkpoints:
+        if new_checkpoint not in found_checkpoints:
+            stack_checkpoints.append(new_checkpoint)
+            found_checkpoints.append(new_checkpoint)
+        else:
+            return True  # Break exploration = True
+    return False  # Break exploration = False
 
 
-def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list):
+def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list, found_checkpoints: list):
     i, j = i_start, j_start
 
     # First step: one vertical check at the starting point
@@ -146,10 +151,13 @@ def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkp
         open_corners = find_open_corner_horizontal_check(
             apartment, i, j, direction)
 
-        if open_corners != [None, None]:
-            update_stack_checkpoints(stack_checkpoints=stack_checkpoints,
-                                     new_open_corners=open_corners,
-                                     direction_when_found=direction)
+        break_search = update_checkpoints(stack_checkpoints=stack_checkpoints,
+                                          found_checkpoints=found_checkpoints,
+                                          new_open_corners=open_corners,
+                                          direction_when_found=direction,
+                                          )
+        if break_search:
+            return 'not found', (i, j)
 
         # If the room name is not found in the row, we move vertically
         if not is_room_on_same_row(apartment, i=i, j=j):
@@ -182,9 +190,8 @@ def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkp
             return find_room_on_same_row(apartment, i, j), (i, j)
 
 
-def explore_vertical_moves(apartment, i_start: int, j_start: int,  stack_checkpoints: list):
-    """TODO To complete
-    """
+def explore_vertical_moves(apartment, i_start: int, j_start: int,  stack_checkpoints: list, found_checkpoints: list):
+
     i, j = i_start, j_start
 
     # First step: one horizontal check at the starting point
@@ -199,10 +206,13 @@ def explore_vertical_moves(apartment, i_start: int, j_start: int,  stack_checkpo
         open_corners = find_open_corner_vertical_check(
             apartment, i, j, direction)
 
-        if open_corners != [None, None]:
-            update_stack_checkpoints(stack_checkpoints=stack_checkpoints,
-                                     new_open_corners=open_corners,
-                                     direction_when_found=direction)
+        break_search = update_checkpoints(stack_checkpoints=stack_checkpoints,
+                                          found_checkpoints=found_checkpoints,
+                                          new_open_corners=open_corners,
+                                          direction_when_found=direction,
+                                          )
+        if break_search:
+            return 'not found', (i, j)
 
         # If the room name is not found in the column, we move horizontally
         if not is_room_on_same_column(apartment, i, j):
@@ -244,18 +254,15 @@ def find_open_corner_horizontal_check(apartment, i, j, direction):
         if row[j_right] not in sc.sep_chars:
             j_right += 1
     # Possible open corner left and right
-    open_corners = [None, None]
-    if direction == 'down':
-        if row[j_left] == '+' and apartment[i+1][j_left] == ' ':
-            open_corners[0] = (i, j_left)
-        if row[j_right] == '+' and apartment[i+1][j_right] == ' ':
-            open_corners[1] = (i, j_right)
-
-    elif direction == 'up':
-        if row[j_left] == '+' and apartment[i-1][j_left] == ' ':
-            open_corners[0] = (i, j_left)
-        if row[j_right] == '+' and apartment[i-1][j_right] == ' ':
-            open_corners[1] = (i, j_right)
+    open_corners = []
+    if row[j_left] == '+' and apartment[i+1][j_left] == ' ' and apartment[i][j_left-1] == '-':
+        open_corners.append((i, j_left))
+    if row[j_right] == '+' and apartment[i+1][j_right] == ' ' and apartment[i][j_right+1] == '-':
+        open_corners.append((i, j_right))
+    if row[j_left] == '+' and apartment[i-1][j_left] == ' ' and apartment[i][j_left-1] == '-':
+        open_corners.append((i, j_left))
+    if row[j_right] == '+' and apartment[i-1][j_right] == ' ' and apartment[i][j_right+1] == '-':
+        open_corners.append((i, j_right))
     return open_corners
 
 
@@ -268,30 +275,32 @@ def find_open_corner_vertical_check(apartment, i, j, direction):
         if col[i_down] not in sc.sep_chars:
             i_down += 1
     # Possible open corners up and down
-    open_corners = [None, None]
-    if direction == 'left':
-        if col[i_up] == '+' and apartment[i_up][j-1] == ' ':
-            open_corners[0] = (i_up, j)
-        if col[i_down] == '+' and apartment[i_down][j-1] == ' ':
-            open_corners[1] == (i_down, j)
-    elif direction == 'right':
-        if col[i_up] == '+' and apartment[i_up][j+1] == ' ':
-            open_corners[0] = (i_up, j)
-        if col[i_down] == '+' and apartment[i_down][j+1] == ' ':
-            open_corners[1] == (i_down, j)
+    open_corners = []
+    if col[i_up] == '+' and apartment[i_up][j-1] == ' ' and apartment[i_up-1][j] == '|':
+        open_corners.append((i_up, j))
+    if col[i_down] == '+' and apartment[i_down][j-1] == ' ' and apartment[i_down+1][j] == '|':
+        open_corners.append((i_down, j))
+    if col[i_up] == '+' and apartment[i_up][j+1] == ' ' and apartment[i_up-1][j] == '|':
+        open_corners.append((i_up, j))
+    if col[i_down] == '+' and apartment[i_down][j+1] == ' ' and apartment[i_down+1][j] == '|':
+        open_corners.append((i_down, j))
     return open_corners
 
 
-def explore(apartment, exp_type, i, j, stack_checkpoints):
+def explore(apartment, exp_type, i, j, stack_checkpoints, found_checkpoints):
     if exp_type == 'h':
-        return explore_horizontal_moves(apartment, i, j, stack_checkpoints)
+        return explore_horizontal_moves(apartment, i, j, stack_checkpoints, found_checkpoints)
     elif exp_type == 'v':
-        return explore_vertical_moves(apartment, i, j, stack_checkpoints)
+        return explore_vertical_moves(apartment, i, j, stack_checkpoints, found_checkpoints)
 
 
 def search_room(apartment, coord, max_iterations=100):
     room_of_chair = 'not found'
     stack_checkpoints = [
+        {'coord': coord, 'exp_type': 'h'},
+        {'coord': coord, 'exp_type': 'v'}
+    ]
+    found_checkpoints = [
         {'coord': coord, 'exp_type': 'h'},
         {'coord': coord, 'exp_type': 'v'}
     ]
@@ -302,18 +311,17 @@ def search_room(apartment, coord, max_iterations=100):
         # Handle possible errors
         count += 1
         if count > max_iterations:
-            raise MiscException('Too many iterations')
+            raise RuntimeError('Too many iterations')
         if not stack_checkpoints:
-            raise Error(
+            raise Exception(
                 'The stack_checkpoints variable is empty and the room name is unfounded')
-
         checkpoint = stack_checkpoints.pop()
         exp_type = checkpoint['exp_type']
         new_i, new_j = checkpoint['coord']
         i, j = change_pos(apartment, i=i,
                           j=j, new_i=new_i, new_j=new_j)
         room_of_chair, (i, j) = explore(
-            apartment, exp_type, i, j, stack_checkpoints)
+            apartment, exp_type, i, j, stack_checkpoints, found_checkpoints)
     return room_of_chair
 
 
@@ -377,7 +385,7 @@ def print_output_console(grouped_dict_final_output):
 
 def run_solution(file_path):
     # rooms.txt (i.e the apartment)
-    with open('rooms.txt', 'r') as f:
+    with open(file_path, 'r') as f:
         apartment_string = f.read()
     apartment_init = [list([j for j in i.split('\n')][0])
                       for i in apartment_string.splitlines()]
@@ -396,6 +404,7 @@ def run_solution(file_path):
 
     dict_apartment_chairs = defaultdict(list)
     for k, coord in enumerate(list_pos_chairs):
+        # if k+1 == 6:
         i, j = coord
         chair = apartment_init[i][j]
         apartment = remove_chairs(
@@ -404,10 +413,13 @@ def run_solution(file_path):
         # Save it
         dict_apartment_chairs[room_of_chair].append(chair)
 
-    grouped_dict_apartment_chairs = group_dict_apartment_chairs(
-        dict_apartment_chairs)
-    dict_total_chairs = make_total_dict_result(
-        grouped_dict_apartment_chairs)
+        grouped_dict_apartment_chairs = group_dict_apartment_chairs(
+            dict_apartment_chairs)
+        dict_total_chairs = make_total_dict_result(
+            grouped_dict_apartment_chairs)
+
+    assert check_total_chairs(
+        dict_total_chairs, apartment_string), "The total repartition incorrect"
 
     grouped_dict_final_output = grouped_dict_apartment_chairs
     grouped_dict_final_output['total'] = dict_total_chairs
@@ -416,5 +428,6 @@ def run_solution(file_path):
 
 
 if __name__ == "__main__":
-    file_path = sys.argv[1]
+    given_path = './rooms_tests/test_rooms_2.txt'
+    file_path = sys.argv[1] if len(sys.argv) > 1 else given_path
     run_solution(file_path=file_path)
