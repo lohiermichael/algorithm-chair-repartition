@@ -385,12 +385,13 @@ def print_output_console(grouped_dict_final_output):
 
 
 def run_solution(file_path):
-    # rooms.txt (i.e the apartment)
+    '''Step 1: Read and transform the txt file'''
     with open(file_path, 'r') as f:
         apartment_string = f.read()
     apartment_init = [list([j for j in i.split('\n')][0])
                       for i in apartment_string.splitlines()]
-    # Future useful objects
+
+    '''Step 2: Locate the chairs in the apartment'''
 
     # Dictionary: keys: a chair position, values: its name
     dict_pos_chairs = {}
@@ -402,6 +403,10 @@ def run_solution(file_path):
     # List of postitions of chairs ordered vertically and horizontally
     list_pos_chairs = list(dict_pos_chairs.keys())
     list_pos_chairs.sort(key=lambda x: (x[0], x[1]))
+    print(list_pos_chairs)
+    print(dict_pos_chairs)
+
+    '''Step 3: Find the room of each chair'''
 
     dict_apartment_chairs = defaultdict(list)
     for k, coord in enumerate(list_pos_chairs):
@@ -412,6 +417,8 @@ def run_solution(file_path):
         room_of_chair = search_room(apartment, coord)
         # Save it
         dict_apartment_chairs[room_of_chair].append(chair)
+
+    '''Step 4: Transform the result and display it'''
 
     grouped_dict_apartment_chairs = group_dict_apartment_chairs(
         dict_apartment_chairs)
