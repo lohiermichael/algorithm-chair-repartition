@@ -117,6 +117,7 @@ Move strategies
 
 
 def update_checkpoints(stack_checkpoints, found_checkpoints, new_open_corners, direction_when_found):
+    """ Update the lists stack_checkpoints and found_checkpoints thanks to the newly found open corners """
     new_checkpoints = []
     for open_corner in new_open_corners:
         i, j = open_corner
@@ -139,6 +140,7 @@ def update_checkpoints(stack_checkpoints, found_checkpoints, new_open_corners, d
 
 
 def explore_vertical_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list, found_checkpoints: list):
+    """ Perform the vertical exploration """
     i, j = i_start, j_start
 
     # First step: one vertical check at the starting point
@@ -192,7 +194,7 @@ def explore_vertical_moves(apartment, i_start: int, j_start: int, stack_checkpoi
 
 
 def explore_horizontal_moves(apartment, i_start: int, j_start: int,  stack_checkpoints: list, found_checkpoints: list):
-
+    """ Perform the horizontal exploration """
     i, j = i_start, j_start
 
     # First step: one horizontal check at the starting point
@@ -245,7 +247,7 @@ def explore_horizontal_moves(apartment, i_start: int, j_start: int,  stack_check
 
 
 def find_open_corner_horizontal_check(apartment, i, j, direction):
-
+    """ During a vertical exploration, find the open corners by checking horizontally """
     row = apartment[i]
     j_left, j_right = j-1, j+1
     while not ((row[j_left] in sc.sep_chars) and (row[j_right] in sc.sep_chars)):
@@ -269,6 +271,7 @@ def find_open_corner_horizontal_check(apartment, i, j, direction):
 
 
 def find_open_corner_vertical_check(apartment, i, j, direction):
+    """ During a horizontal exploration, find the open corners by checking vertically """
     col = [apartment[k][j] for k in range(len(apartment))]
     i_up, i_down = i-1, i+1
     while not((col[i_up] in sc.sep_chars) and (col[i_down] in sc.sep_chars)):
@@ -292,6 +295,7 @@ def find_open_corner_vertical_check(apartment, i, j, direction):
 
 
 def explore(apartment, exp_type, i, j, stack_checkpoints, found_checkpoints):
+    """ Run explore_horizontal_moves() or explore_vertical_moves() depending on the chosen type of exploration"""
     if exp_type == 'h':
         return explore_horizontal_moves(apartment, i, j, stack_checkpoints, found_checkpoints)
     elif exp_type == 'v':
@@ -299,6 +303,7 @@ def explore(apartment, exp_type, i, j, stack_checkpoints, found_checkpoints):
 
 
 def search_room(apartment, coord, max_iterations=100):
+    """Find  the room a given chair is in"""
     room_of_chair = 'not found'
     stack_checkpoints = [
         {'coord': coord, 'exp_type': 'h'},
@@ -333,30 +338,33 @@ Final Output generation
 """
 
 
-def group_dict_apartment_chairs(dict_apartment_chairs):
-
-    grouped_dict_apartment_chairs = {}
-    for room_name in dict_apartment_chairs.keys():
-        grouped_dict_apartment_chairs[room_name] = dict(
-            Counter(dict_apartment_chairs[room_name]))
+def group_dict_rooms_chairs(dict_rooms_chairs):
+    """ Group the chairs of each room to give their counts """
+    grouped_dict_rooms_chairs = {}
+    for room_name in dict_rooms_chairs.keys():
+        grouped_dict_rooms_chairs[room_name] = dict(
+            Counter(dict_rooms_chairs[room_name]))
         # Add 0s for the chairs that a given room doesn't have
         for chair in sc.chairs:
-            if chair not in grouped_dict_apartment_chairs[room_name].keys():
-                grouped_dict_apartment_chairs[room_name][chair] = 0
+            if chair not in grouped_dict_rooms_chairs[room_name].keys():
+                grouped_dict_rooms_chairs[room_name][chair] = 0
 
-    return grouped_dict_apartment_chairs
+    return grouped_dict_rooms_chairs
 
 
-def make_total_dict_result(grouped_dict_apartment_chairs):
+def make_total_dict_result(grouped_dict_rooms_chairs):
+    """ Generate the dictionary of the total for each chair, given their repartion in the different rooms """
     dict_total_chairs = {chair: 0 for chair in sc.chairs}
-    for room_name in grouped_dict_apartment_chairs.keys():
-        room_chairs = grouped_dict_apartment_chairs[room_name]
+    for room_name in grouped_dict_rooms_chairs.keys():
+        room_chairs = grouped_dict_rooms_chairs[room_name]
         for chair in room_chairs.keys():
             dict_total_chairs[chair] += room_chairs[chair]
     return dict(dict_total_chairs)
 
 
 def check_total_chairs(dict_total_chairs, apartment_string):
+    """ As we could perform the count of the totals for each chair before the algorithm with another method,
+    we check if we get the same result after running the algorithm """
     total_chairs_from_input = {chair: Counter(apartment_string)[chair]
                                for chair in Counter(apartment_string) if chair in sc.chairs}
     # Add 0s for the chairs that a given room doesn't have
@@ -367,6 +375,7 @@ def check_total_chairs(dict_total_chairs, apartment_string):
 
 
 def print_element_console(grouped_dict_final_output, element):
+    """ Print one of the output lines in the console """
     dict_chairs_of_element = grouped_dict_final_output[element]
 
     print(f'{element}:')
@@ -378,6 +387,7 @@ def print_element_console(grouped_dict_final_output, element):
 
 
 def print_output_console(grouped_dict_final_output):
+    """ Print out the output in the console """
     grouped_dict_final_output = grouped_dict_final_output.copy()
 
     # We first print the total result
@@ -412,7 +422,7 @@ def run_solution(file_path):
 
     '''Step 3: Find the room of each chair'''
 
-    dict_apartment_chairs = defaultdict(list)
+    dict_rooms_chairs = defaultdict(list)
     for k, coord in enumerate(list_pos_chairs):
         i, j = coord
         chair = apartment_init[i][j]
@@ -425,19 +435,19 @@ def run_solution(file_path):
         room_of_chair = search_room(apartment, coord)
 
         '''Step 3.3: Save the result'''
-        dict_apartment_chairs[room_of_chair].append(chair)
+        dict_rooms_chairs[room_of_chair].append(chair)
 
     '''Step 4: Transform the result and display it'''
 
-    grouped_dict_apartment_chairs = group_dict_apartment_chairs(
-        dict_apartment_chairs)
+    grouped_dict_rooms_chairs = group_dict_rooms_chairs(
+        dict_rooms_chairs)
     dict_total_chairs = make_total_dict_result(
-        grouped_dict_apartment_chairs)
+        grouped_dict_rooms_chairs)
 
     assert check_total_chairs(
         dict_total_chairs, apartment_string), "The total repartition incorrect"
 
-    grouped_dict_final_output = grouped_dict_apartment_chairs
+    grouped_dict_final_output = grouped_dict_rooms_chairs
     grouped_dict_final_output['total'] = dict_total_chairs
 
     print_output_console(grouped_dict_final_output)
