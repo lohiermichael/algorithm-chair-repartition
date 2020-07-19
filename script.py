@@ -13,6 +13,7 @@ Data Modification
 
 
 def remove_chairs(apartment_init, list_pos_chairs, except_chair):
+    """ Make a copy of the initial apartment and only keep one chair """
     apartment = deepcopy(apartment_init)
     for pair in list_pos_chairs:
         if pair != except_chair:
@@ -22,6 +23,7 @@ def remove_chairs(apartment_init, list_pos_chairs, except_chair):
 
 
 def change_pos(apartment, i, j, new_i, new_j):
+    """ Switches two elements of the apartment """
     apartment[i][j], apartment[new_i][new_j] = apartment[new_i][new_j], apartment[i][j]
     i, j = new_i, new_j
     return i, j
@@ -33,6 +35,7 @@ Vertical check
 
 
 def is_room_on_same_column(apartment, i, j):
+    """ Check if the chair in apartment[i][j] has its room name on the same column. """
     chair = apartment[i][j]
     col = [apartment[k][j] for k in range(len(apartment))]
     col_no_space = list(filter(lambda e: e != ' ', col))
@@ -40,6 +43,7 @@ def is_room_on_same_column(apartment, i, j):
 
 
 def find_room_on_same_column(apartment, i, j):
+    """ If a room name was found on a row a chair is, it finds this name. """
     col = [apartment[k][j] for k in range(len(apartment))]
     i_up, i_down = i-1, i+1
     # Find a character of the room
@@ -76,12 +80,14 @@ Horizontal check
 
 
 def is_room_on_same_row(apartment, i, j):
+    """ Check if the chair in apartment[i][j] has its room name on the same row. """
     chair = apartment[i][j]
     row_no_space = list(filter(lambda e: e != ' ', apartment[i]))
     return row_no_space[row_no_space.index(chair)+1] == '(' or row_no_space[row_no_space.index(chair)-1] == ')'
 
 
 def find_room_on_same_row(apartment, i, j):
+    """ If a room name was found on a row a chair is, it finds this name. """
     row = apartment[i]
     j_left, j_right = j-1, j+1
     while row[j_left] != ')' and row[j_right] != '(':
@@ -132,7 +138,7 @@ def update_checkpoints(stack_checkpoints, found_checkpoints, new_open_corners, d
             found_checkpoints.append(new_checkpoint)
 
 
-def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list, found_checkpoints: list):
+def explore_vertical_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list, found_checkpoints: list):
     i, j = i_start, j_start
 
     # First step: one vertical check at the starting point
@@ -185,7 +191,7 @@ def explore_horizontal_moves(apartment, i_start: int, j_start: int, stack_checkp
             return find_room_on_same_row(apartment, i, j), (i, j)
 
 
-def explore_vertical_moves(apartment, i_start: int, j_start: int,  stack_checkpoints: list, found_checkpoints: list):
+def explore_horizontal_moves(apartment, i_start: int, j_start: int,  stack_checkpoints: list, found_checkpoints: list):
 
     i, j = i_start, j_start
 
@@ -403,8 +409,6 @@ def run_solution(file_path):
     # List of postitions of chairs ordered vertically and horizontally
     list_pos_chairs = list(dict_pos_chairs.keys())
     list_pos_chairs.sort(key=lambda x: (x[0], x[1]))
-    print(list_pos_chairs)
-    print(dict_pos_chairs)
 
     '''Step 3: Find the room of each chair'''
 
@@ -440,6 +444,6 @@ def run_solution(file_path):
 
 
 if __name__ == "__main__":
-    given_path = './test_rooms/test_rooms_3.txt'
+    given_path = './test_rooms/test_rooms_1.txt'
     file_path = sys.argv[1] if len(sys.argv) > 1 else given_path
     run_solution(file_path=file_path)
