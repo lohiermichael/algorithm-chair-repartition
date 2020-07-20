@@ -1,6 +1,7 @@
 # VS Code configuration
 .vscode
 __pycache__/
+.pytest_cache
 
 # Notebooks
 .ipynb_checkpoints
