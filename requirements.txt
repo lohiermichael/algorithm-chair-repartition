@@ -1,3 +1,6 @@
 # For the notebooks
 ipykernel==5.3.2
 jupyter==1.0.0
+
+# For testing
+pytest==3.8.3
