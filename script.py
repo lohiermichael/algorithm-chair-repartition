@@ -425,6 +425,7 @@ def run_solution(file_path):
 
     dict_rooms_chairs = defaultdict(list)
     for k, coord in enumerate(list_pos_chairs):
+        # if k == ...:
         i, j = coord
         chair = apartment_init[i][j]
 
