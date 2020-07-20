@@ -359,7 +359,7 @@ def make_total_dict_result(grouped_dict_rooms_chairs):
         room_chairs = grouped_dict_rooms_chairs[room_name]
         for chair in room_chairs.keys():
             dict_total_chairs[chair] += room_chairs[chair]
-    return dict(dict_total_chairs)
+    return dict_total_chairs
 
 
 def check_total_chairs(dict_total_chairs, apartment_string):
@@ -396,7 +396,7 @@ def print_output_console(grouped_dict_final_output):
     del grouped_dict_final_output['total']
 
     # We then loop over the apartment names in the alphabetical order
-    sorted_room_names = grouped_dict_final_output.keys()
+    sorted_room_names = sorted(grouped_dict_final_output.keys())
     for room_name in sorted_room_names:
         print_element_console(grouped_dict_final_output, element=room_name)
 
@@ -455,6 +455,6 @@ def run_solution(file_path):
 
 
 if __name__ == "__main__":
-    given_path = './test_rooms/test_rooms_1.txt'
+    given_path = './test_rooms/test_rooms_4.txt'
     file_path = sys.argv[1] if len(sys.argv) > 1 else given_path
     run_solution(file_path=file_path)
