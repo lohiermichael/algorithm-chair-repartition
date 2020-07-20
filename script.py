@@ -303,7 +303,7 @@ def explore(apartment, exp_type, i, j, stack_checkpoints, found_checkpoints):
 
 
 def search_room(apartment, coord, max_iterations=100):
-    """Find  the room a given chair is in"""
+    """Find the room a given chair is in"""
     room_of_chair = 'not found'
     stack_checkpoints = [
         {'coord': coord, 'exp_type': 'h'},
@@ -365,8 +365,9 @@ def make_total_dict_result(grouped_dict_rooms_chairs):
 def check_total_chairs(dict_total_chairs, apartment_string):
     """ As we could perform the count of the totals for each chair before the algorithm with another method,
     we check if we get the same result after running the algorithm """
-    total_chairs_from_input = {chair: Counter(apartment_string)[chair]
-                               for chair in Counter(apartment_string) if chair in sc.chairs}
+    counter_string = Counter(apartment_string)
+    total_chairs_from_input = {chair: counter_string[chair]
+                               for chair in counter_string if chair in sc.chairs}
     # Add 0s for the chairs that a given room doesn't have
     for chair in sc.chairs:
         if chair not in total_chairs_from_input.keys():
@@ -395,8 +396,8 @@ def print_output_console(grouped_dict_final_output):
     del grouped_dict_final_output['total']
 
     # We then loop over the apartment names in the alphabetical order
-
-    for room_name in sorted(grouped_dict_final_output.keys()):
+    sorted_room_names = grouped_dict_final_output.keys()
+    for room_name in sorted_room_names:
         print_element_console(grouped_dict_final_output, element=room_name)
 
 
