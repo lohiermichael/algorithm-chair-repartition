@@ -3,6 +3,7 @@ import sys
 
 from collections import Counter, defaultdict
 from copy import deepcopy
+from typing import *
 
 from utils import console_print_of  # Used for debugging
 import special_characters as sc
@@ -12,7 +13,7 @@ Data Modification
 """
 
 
-def remove_chairs(apartment_init, list_pos_chairs, except_chair):
+def remove_chairs(apartment_init: List[List], list_pos_chairs: List[Tuple], except_chair: str):
     """ Make a copy of the initial apartment and only keep one chair """
     apartment = deepcopy(apartment_init)
     for pair in list_pos_chairs:
@@ -22,7 +23,7 @@ def remove_chairs(apartment_init, list_pos_chairs, except_chair):
     return apartment
 
 
-def change_pos(apartment, i, j, new_i, new_j):
+def change_pos(apartment: List[List], i: int, j: int, new_i: int, new_j: int):
     """ Switches two elements of the apartment """
     apartment[i][j], apartment[new_i][new_j] = apartment[new_i][new_j], apartment[i][j]
     i, j = new_i, new_j
@@ -34,7 +35,7 @@ Vertical check
 """
 
 
-def is_room_on_same_column(apartment, i, j):
+def is_room_on_same_column(apartment: List[List], i: int, j: int):
     """ Check if the chair in apartment[i][j] has its room name on the same column. """
     chair = apartment[i][j]
     col = [apartment[k][j] for k in range(len(apartment))]
@@ -42,7 +43,7 @@ def is_room_on_same_column(apartment, i, j):
     return col_no_space[col_no_space.index(chair)+1] not in sc.sep_chars or col_no_space[col_no_space.index(chair)-1] not in sc.sep_chars
 
 
-def find_room_on_same_column(apartment, i, j):
+def find_room_on_same_column(apartment: List[List], i: int, j: int):
     """ If a room name was found on a row a chair is, it finds this name. """
     col = [apartment[k][j] for k in range(len(apartment))]
     i_up, i_down = i-1, i+1
@@ -79,14 +80,14 @@ Horizontal check
 """
 
 
-def is_room_on_same_row(apartment, i, j):
+def is_room_on_same_row(apartment: List[List], i: int, j: int):
     """ Check if the chair in apartment[i][j] has its room name on the same row. """
     chair = apartment[i][j]
     row_no_space = list(filter(lambda e: e != ' ', apartment[i]))
     return row_no_space[row_no_space.index(chair)+1] == '(' or row_no_space[row_no_space.index(chair)-1] == ')'
 
 
-def find_room_on_same_row(apartment, i, j):
+def find_room_on_same_row(apartment: List[List], i: int, j: int):
     """ If a room name was found on a row a chair is, it finds this name. """
     row = apartment[i]
     j_left, j_right = j-1, j+1
@@ -116,7 +117,7 @@ Move strategies
 """
 
 
-def update_checkpoints(stack_checkpoints, found_checkpoints, new_open_corners, direction_when_found):
+def update_checkpoints(stack_checkpoints: List[Dict], found_checkpoints: List[Dict], new_open_corners: list, direction_when_found: str):
     """ Update the lists stack_checkpoints and found_checkpoints thanks to the newly found open corners """
     new_checkpoints = []
     for open_corner in new_open_corners:
@@ -139,7 +140,7 @@ def update_checkpoints(stack_checkpoints, found_checkpoints, new_open_corners, d
             found_checkpoints.append(new_checkpoint)
 
 
-def explore_vertical_moves(apartment, i_start: int, j_start: int, stack_checkpoints: list, found_checkpoints: list):
+def explore_vertical_moves(apartment: List[List], i_start: int, j_start: int, stack_checkpoints: list, found_checkpoints: list):
     """ Perform the vertical exploration """
     i, j = i_start, j_start
 
@@ -193,7 +194,7 @@ def explore_vertical_moves(apartment, i_start: int, j_start: int, stack_checkpoi
             return find_room_on_same_row(apartment, i, j), (i, j)
 
 
-def explore_horizontal_moves(apartment, i_start: int, j_start: int,  stack_checkpoints: list, found_checkpoints: list):
+def explore_horizontal_moves(apartment: List[List], i_start: int, j_start: int,  stack_checkpoints: list, found_checkpoints: list):
     """ Perform the horizontal exploration """
     i, j = i_start, j_start
 
@@ -246,7 +247,7 @@ def explore_horizontal_moves(apartment, i_start: int, j_start: int,  stack_check
             return find_room_on_same_column(apartment, i, j), (i, j)
 
 
-def find_open_corner_horizontal_check(apartment, i, j, direction):
+def find_open_corner_horizontal_check(apartment: List[List], i: int, j: int, direction):
     """ During a vertical exploration, find the open corners by checking horizontally """
     row = apartment[i]
     j_left, j_right = j-1, j+1
@@ -270,7 +271,7 @@ def find_open_corner_horizontal_check(apartment, i, j, direction):
     return open_corners
 
 
-def find_open_corner_vertical_check(apartment, i, j, direction):
+def find_open_corner_vertical_check(apartment: List[List], i: int, j: int, direction: str):
     """ During a horizontal exploration, find the open corners by checking vertically """
     col = [apartment[k][j] for k in range(len(apartment))]
     i_up, i_down = i-1, i+1
@@ -294,7 +295,7 @@ def find_open_corner_vertical_check(apartment, i, j, direction):
     return open_corners
 
 
-def explore(apartment, exp_type, i, j, stack_checkpoints, found_checkpoints):
+def explore(apartment: List[List], exp_type, i: int, j: int, stack_checkpoints: List[Dict], found_checkpoints: List[Dict]):
     """ Run explore_horizontal_moves() or explore_vertical_moves() depending on the chosen type of exploration"""
     if exp_type == 'h':
         return explore_horizontal_moves(apartment, i, j, stack_checkpoints, found_checkpoints)
@@ -302,7 +303,7 @@ def explore(apartment, exp_type, i, j, stack_checkpoints, found_checkpoints):
         return explore_vertical_moves(apartment, i, j, stack_checkpoints, found_checkpoints)
 
 
-def search_room(apartment, coord, max_iterations=100):
+def search_room(apartment: List[List], coord, max_iterations=100):
     """Find the room a given chair is in"""
     room_of_chair = 'not found'
     stack_checkpoints = [
@@ -338,7 +339,7 @@ Final Output generation
 """
 
 
-def group_dict_rooms_chairs(dict_rooms_chairs):
+def group_dict_rooms_chairs(dict_rooms_chairs: Dict[str, List]):
     """ Group the chairs of each room to give their counts """
     grouped_dict_rooms_chairs = {}
     for room_name in dict_rooms_chairs.keys():
@@ -352,7 +353,7 @@ def group_dict_rooms_chairs(dict_rooms_chairs):
     return grouped_dict_rooms_chairs
 
 
-def make_total_dict_result(grouped_dict_rooms_chairs):
+def make_total_dict_result(grouped_dict_rooms_chairs: Dict[str, Dict]):
     """ Generate the dictionary of the total for each chair, given their repartion in the different rooms """
     dict_total_chairs = {chair: 0 for chair in sc.chairs}
     for room_name in grouped_dict_rooms_chairs.keys():
@@ -362,7 +363,7 @@ def make_total_dict_result(grouped_dict_rooms_chairs):
     return dict_total_chairs
 
 
-def check_total_chairs(dict_total_chairs, apartment_string):
+def check_total_chairs(dict_total_chairs: Dict, apartment_string: List[List]):
     """ As we could perform the count of the totals for each chair before the algorithm with another method,
     we check if we get the same result after running the algorithm """
     counter_string = Counter(apartment_string)
@@ -375,7 +376,7 @@ def check_total_chairs(dict_total_chairs, apartment_string):
     return dict_total_chairs == total_chairs_from_input
 
 
-def print_element_console(grouped_dict_final_output, element):
+def print_element_console(grouped_dict_final_output: Dict[str, Dict], element: str):
     """ Print one of the output lines in the console """
     dict_chairs_of_element = grouped_dict_final_output[element]
 
@@ -387,7 +388,7 @@ def print_element_console(grouped_dict_final_output, element):
     print(str_line[:-2])
 
 
-def print_output_console(grouped_dict_final_output):
+def print_output_console(grouped_dict_final_output: dict):
     """ Print out the output in the console """
     grouped_dict_final_output = grouped_dict_final_output.copy()
 
@@ -401,7 +402,7 @@ def print_output_console(grouped_dict_final_output):
         print_element_console(grouped_dict_final_output, element=room_name)
 
 
-def run_solution(file_path):
+def run_solution(file_path: str):
     '''Step 1: Read and transform the txt file'''
     with open(file_path, 'r') as f:
         apartment_string = f.read()
@@ -456,6 +457,7 @@ def run_solution(file_path):
 
 
 if __name__ == "__main__":
-    given_path = './test_rooms/test_rooms_4.txt'
+    # Write a path to a file
+    given_path = 'rooms.txt'
     file_path = sys.argv[1] if len(sys.argv) > 1 else given_path
     run_solution(file_path=file_path)
